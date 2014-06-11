@@ -7,3 +7,6 @@
 [submodule "lib/mimic"]
 	path = lib/mimic
 	url = https://code.google.com/p/cloud-playground.mimic/
+[submodule "lib/bliss"]
+	path = lib/bliss
+	url = https://code.google.com/p/cloud-playground.bliss/
