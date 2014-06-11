@@ -1,0 +1,9 @@
+[submodule "lib/pipeline"]
+	path = lib/pipeline
+	url = https://github.com/Tagtoo/pipeline
+[submodule "lib/mapreduce"]
+	path = lib/mapreduce
+	url = https://github.com/Tagtoo/mapreduce.git
+[submodule "lib/mimic"]
+	path = lib/mimic
+	url = https://code.google.com/p/cloud-playground.mimic/
