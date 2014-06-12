@@ -7,6 +7,9 @@
 [submodule "lib/mimic"]
 	path = lib/mimic
 	url = https://code.google.com/p/cloud-playground.mimic/
-[submodule "lib/bliss"]
-	path = lib/bliss
-	url = https://code.google.com/p/cloud-playground.bliss/
+[submodule "lib/google-api-python-client"]
+	path = lib/google-api-python-client
+	url = https://github.com/google/google-api-python-client.git
+[submodule "lib/httplib2"]
+	path = lib/httplib2
+	url = https://github.com/jcgregorio/httplib2.git
