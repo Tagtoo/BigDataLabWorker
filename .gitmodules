@@ -13,3 +13,6 @@
 [submodule "lib/httplib2"]
 	path = lib/httplib2
 	url = https://github.com/jcgregorio/httplib2.git
+[submodule "lib/handlers"]
+	path = lib/handlers
+	url = https://github.com/Tagtoo/handlers.git

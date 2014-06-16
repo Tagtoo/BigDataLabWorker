@@ -1,0 +1,8 @@
+builtins:
+- remote_api: on
+- deferred: on
+- appstats: on
+
+handlers:
+- url: /_task(/.*)?
+  script: handlers.app
