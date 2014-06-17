@@ -1,24 +1,24 @@
 [submodule "lib/pipeline"]
-	path = BigDataLabWorker/lib/pipeline
+	path = lib/pipeline
 	url = https://github.com/Tagtoo/pipeline
 [submodule "lib/mapreduce"]
-	path = BigDataLabWorker/lib/mapreduce
+	path = lib/mapreduce
 	url = https://github.com/Tagtoo/mapreduce.git
 [submodule "lib/mimic"]
-	path = BigDataLabWorker/lib/mimic
+	path = lib/mimic
 	url = https://code.google.com/p/cloud-playground.mimic/
 [submodule "lib/google-api-python-client"]
-	path = BigDataLabWorker/lib/google-api-python-client
+	path = lib/google-api-python-client
 	url = https://github.com/google/google-api-python-client.git
 [submodule "lib/httplib2"]
-	path = BigDataLabWorker/lib/httplib2
+	path = lib/httplib2
 	url = https://github.com/jcgregorio/httplib2.git
 [submodule "lib/handlers"]
-	path = BigDataLabWorker/lib/handlers
+	path = lib/handlers
 	url = https://github.com/Tagtoo/handlers.git
 [submodule "BigDataLabWorker/lib/TaskWorker"]
-	path = BigDataLabWorker/lib/TaskWorker
+	path = lib/TaskWorker
 	url = https://github.com/Tagtoo/TaskWorker
 [submodule "BigDataLabWorker/lib/cloudstorage"]
-	path = BigDataLabWorker/lib/cloudstorage
+	path = lib/cloudstorage
 	url = https://github.com/Tagtoo/appengine-gcs-client.git
