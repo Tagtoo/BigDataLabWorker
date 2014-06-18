@@ -1,0 +1,25 @@
+version: 1
+disable_existing_loggers: False
+root:
+    level: ERROR
+    incremental: True
+    handlers: [applog]
+
+loggers:
+    pipeline:
+        level: ERROR
+        handlers: [hipchatlog]
+
+handlers:
+    hipchatlog:
+        class: lib.share_libs.hubot.loghandler.HipChatLogsHandler
+        room: ClickLog
+        formatter: hipchat
+    applog:
+        class: google.appengine.api.app_logging.AppLogsHandler
+    nulllog:
+        class: logging.NullHandler
+
+formatters:
+    hipchat:
+        format: '%(name)s %(levelname)s %(message)s'
