@@ -5,8 +5,6 @@ from .BigQuery import Gs2Bq
 
 logger = logging.getLogger('pipeline')
 
-def log2gs(l):
-    yield l.resource + '\n'
 
 class Log2Gs(base_handler.PipelineBase):
     """A pipeline to ingest log as CSV in Google Storage
