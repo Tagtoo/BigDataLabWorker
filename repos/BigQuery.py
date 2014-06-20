@@ -4,6 +4,8 @@ import mapreduce.third_party.pipeline as pipeline
 import mapreduce.third_party.pipeline.common as pipeline_common
 import logging
 
+# define some common query
+
 logger = logging.getLogger('pipeline')
 
 credentials = AppAssertionCredentials(
@@ -16,7 +18,13 @@ service = build('bigquery', 'v2', http=http)
 # https://developers.google.com/bigquery/docs/reference/v2/jobs/insert
 # can only have one child
 
-class BqCheck(base_handler.PipelineBase):
+def load_module(cls_path):
+    module_path, class_name = ".".join(cls_path.split('.')[:-1]), cls_path.split('.')[-1]
+    mod = __import__(module_path, fromlist=[class_name])
+    return getattr(mod, class_name)
+
+
+class Check(base_handler.PipelineBase):
     def run(self, projectId, jobId, delays=10):
         jobs = service.jobs()
         status = jobs.get(
@@ -27,7 +35,7 @@ class BqCheck(base_handler.PipelineBase):
         if status['status']['state'] == 'PENDING' or status['status']['state'] == 'RUNNING':
             delay = yield pipeline_common.Delay(seconds=delays)
             with pipeline.After(delay):
-                yield BqCheck(projectId, jobId)
+                yield Check(projectId, jobId, delays)
         else:
             if status['status']['state'] == "DONE":
                 if 'errorResult' in status['status']:
@@ -35,10 +43,10 @@ class BqCheck(base_handler.PipelineBase):
                 else:
                     logger.info("bq success %s" % status)
 
-                yield pipeline_common.Return(status)
+                return status
 
 
-class BqApi(base_handler.PipelineBase):
+class Api(base_handler.PipelineBase):
     def run(self, projectId, resourceType, method, body, *args, **kwargs):
         resource = getattr(service, resourceType)()
         method = getattr(resource, method)
@@ -51,20 +59,36 @@ class BqApi(base_handler.PipelineBase):
             **kwargs
         ).execute()
 
-        checked = yield BqCheck(projectId, result['jobReference']['jobId'])
+        return result
+
+
+class BqJobWait(base_handler.PipelineBase):
+    def run(self, projectId, method, body, *args, **kwargs):
+        jobs = service.jobs()
+        method = getattr(resource, method)
+
+        kwargs['projectId'] = projectId
+        kwargs['body'] = body
+
+        result = method(
+            *args,
+            **kwargs
+        ).execute()
+
+        checked = yield Check(projectId, result['jobReference']['jobId'])
         with pipeline.After(checked):
-            yield pipeline_common.Return(result['jobReference']['jobId'])
+            return result['jobReference']['jobId']
 
 
 class BqQuery2Func(base_handler.PipelineBase):
     def run(self, projectId, query, funcPath, funcParams, timeoutMs=0):
-        jobId = yield BqApi(projectId, 'jobs', 'query', {
+        # TODO: only support sync query
+        jobId = yield BqJobWait(projectId, 'jobs', 'query', {
             "query": query,
             "timeoutMs": timeoutMs
         })
 
-        with pipeline.After(jobId):
-            yield BqResults2Func(projectId, jobId, funcPath, funcParams, timeoutMs)
+        yield BqResults2Func(projectId, jobId, funcPath, funcParams, timeoutMs)
 
 
 class BqResults2Func(base_handler.PipelineBase):
@@ -96,5 +120,6 @@ class BqResults2Func(base_handler.PipelineBase):
         args = funcParams.get('args', [])
         kwargs = funcParams.get('kwargs', {})
         r = func(rows, *args, **kwargs)
-        yield pipeline_common.Return(r)
+
+        return r
 

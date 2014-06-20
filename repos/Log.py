@@ -2,6 +2,7 @@ from mapreduce import base_handler, mapreduce_pipeline
 import pipeline
 import logging
 from .BigQuery import Gs2Bq
+from .MapReduce import Mapper
 
 logger = logging.getLogger('pipeline')
 
@@ -11,7 +12,7 @@ class Log2Gs(base_handler.PipelineBase):
     """
 
     def run(self, name, mapper, start_time, end_time, version_ids, gsbucketname, shards=255):
-        yield mapreduce_pipeline.MapperPipeline(
+        yield Mapper(
             name,
             mapper,
             "mapreduce.input_readers.LogInputReader",

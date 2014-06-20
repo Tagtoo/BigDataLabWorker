@@ -1,11 +1,4 @@
-from mapreduce import base_handler, mapreduce_pipeline
+from mapreduce import mapreduce_pipeline
 
-class Mapper(base_handler.PipelineBase):
-    def run(self, *args, **kwargs):
-        yield mapreduce_pipeline.MapperPipeline(*args, **kwargs)
-
-
-class MapReduce(base_handler.PipelineBase):
-    def run(self, *args, **kwargs):
-        yield mapreduce_pipeline.MapReducePipeline(*args, **kwargs)
-
+Mapper = mapreduce_pipeline.MapperPipeline
+MapReduce = mapreduce_pipeline.MapReducePipeline
