@@ -62,7 +62,7 @@ class Api(base_handler.PipelineBase):
         return result
 
 
-class BqJobWait(base_handler.PipelineBase):
+class JobSync(base_handler.PipelineBase):
     def run(self, projectId, method, body, *args, **kwargs):
         jobs = service.jobs()
         method = getattr(resource, method)
@@ -80,24 +80,21 @@ class BqJobWait(base_handler.PipelineBase):
             return result['jobReference']['jobId']
 
 
-class BqQuery2Func(base_handler.PipelineBase):
-    def run(self, projectId, query, funcPath, funcParams, timeoutMs=0):
-        # TODO: only support sync query
-        jobId = yield BqJobWait(projectId, 'jobs', 'query', {
+class Query(base_handler.PipelineBase):
+    def run(self, projectId, query):
+        jobId = yield JobSync(projectId, "query", {
             "query": query,
-            "timeoutMs": timeoutMs
         })
+        return QueryResults(projectId, jobId)
 
-        yield BqResults2Func(projectId, jobId, funcPath, funcParams, timeoutMs)
 
-
-class BqResults2Func(base_handler.PipelineBase):
-    def run(self, projectId, jobId, funcPath, funcParams, timeoutMs=0):
+class QueryResults(base_handler.PipelineBase):
+    def run(self, projectId, jobId, timeoutMs=0):
         jobs = service.jobs()
         queryReply = jobs.getQueryResults(
             projectId=projectId,
             jobId=jobId,
-            timeoutMs=timeoutMs
+            timeoutMs=0
         ).execute()
 
         rows = []
@@ -105,7 +102,7 @@ class BqResults2Func(base_handler.PipelineBase):
             currentRow = len(queryReply['rows'])
 
             while('rows' in queryReply and currentRow < queryReply['totalRows']):
-                queryReply = jobCollection.getQueryResults(
+                queryReply = jobs.getQueryResults(
                     projectId=projectId,
                     jobId=jobId,
                     startIndex=currentRow,
@@ -116,6 +113,19 @@ class BqResults2Func(base_handler.PipelineBase):
                     currentRow += len(queryReply['rows'])
                     rows.extend(queryReply['rows'])
 
+        return rows
+
+
+class Query2Func(base_handler.PipelineBase):
+    def run(self, projectId, query, funcPath, funcParams, timeoutMs=0):
+        rows = yield Query(projectId, query, timeoutMs)
+        yield Results2Func(projectId, rows, funcPath, funcParams)
+
+
+class Results2Func(base_handler.PipelineBase):
+    def run(self, projectId, rows, funcPath, funcParams):
+        rows = query_results(projectId, jobId)
+
         func = load_module(funcPath)
         args = funcParams.get('args', [])
         kwargs = funcParams.get('kwargs', {})
@@ -123,3 +133,68 @@ class BqResults2Func(base_handler.PipelineBase):
 
         return r
 
+
+class Load(base_handler.PipelineBase):
+    def run(self, projectId, datasetId, tableId, sourceUris, fields, sourceFormat="CSV", mode="w+", skipLeadingRows=0, **params):
+        createDisposition = "CREATE_IF_NEEDED" if '+' in mode else "CREATE_NEVER"
+
+        if 'w' in mode:
+            writeDisposition = 'WRITE_TRUNCATE'
+        elif 'a' in mode:
+            writeDisposition = 'WRITE_APPEND'
+        else:
+            writeDisposition = "WRITE_EMPTY"
+
+        config = {
+            "sourceUris": sourceUris,
+            "schema": {
+                "fields": fields
+            },
+            "destinationTable": {
+                "projectId": projectId,
+                "datasetId": datasetId,
+                "tableId": tableId
+            },
+            'createDisposition': createDisposition,
+            'writeDisposition': writeDisposition,
+            'sourceFormat': sourceFormat,
+            "skipLeadingRows": skipLeadingRows
+        }
+
+        config.update(params)
+
+        return JobSync(
+            projectId,
+            method="insert",
+            body={
+                "projectId": projectId,
+                "configuration": {
+                    "load": config
+                }
+            })
+
+
+class Extract(base_handler.PipelineBase):
+    def run(self, projectId, datasetId, tableId, destinationUris, destinationFormat="CSV", printHeader=True, **params):
+        config = {
+            "sourceTable": {
+                "projectId": projectId,
+                "datasetId": datasetId,
+                "tableId": tableId
+            },
+            "destinationUris": destinationUris,
+            "destinationFormat": destinationFormat,
+            "printHeader": printHeader
+        }
+
+        config.update(params)
+
+        return JobSync(
+            projectId,
+            method="extract",
+            body={
+                "projectId": projectId,
+                "configuration": {
+                    "extract": config
+                }
+            })
